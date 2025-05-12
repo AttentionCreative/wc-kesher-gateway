@@ -9,8 +9,8 @@ class WC_Bit_Gateway extends WC_Payment_Gateway
     public function __construct()
     {
         $this->id = 'kesher_bit_transaction';
-        $this->method_title = __('Kesher Bit Payment Gateway', 'kp-kesher-gateway');
-        $this->method_description = __('Process payments via Bit transactions.', 'kp-kesher-gateway');
+        $this->method_title = __('תשלום באמצעות ביט', 'kp-kesher-gateway');
+        $this->method_description = __('ביצוע תשלום באמצעות ביט', 'kp-kesher-gateway');
         $this->has_fields = true;
 
         // Load the settings
