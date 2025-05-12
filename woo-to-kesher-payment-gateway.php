@@ -4,7 +4,7 @@
  * Plugin Name:       תוסף תשלום קשר פתרונות גביה וסליקת אשראי לווקומרס
  * Plugin URI:        https://github.com/AttentionCreative/wc-kesher-gateway
  * Description:       תוסף זה נועד לשלב שלוש שיטות תשלום שונות ב-WooCommerce ולהבטיח אינטראקציה חלקה עם מערכות תשלום של קשר.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.2
  * Requires PHP:      7.2
  * Author:            Attention Creative
@@ -21,7 +21,7 @@ if (! defined('ABSPATH')) {
     exit('restricted access');
 }
 
-define('KESHER_VERSION', '1.0.0');
+define('KESHER_VERSION', '1.0.1');
 
 if (! defined('KESHER_ADMIN_URL')) {
     define('KESHER_ADMIN_URL', get_admin_url());
