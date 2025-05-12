@@ -45,23 +45,21 @@ define('KESHER_GITHUB_TOKEN', defined('ATTENTION_GITHUB_TOKEN') ? ATTENTION_GITH
 add_filter('pre_set_site_transient_update_plugins', 'kesher_check_for_wp_update');
 add_filter('plugins_api', 'kesher_plugin_info', 10, 3);
 
-/**
- * בדיקת עדכון דרך מערכת העדכונים
- */
 function kesher_check_for_wp_update($transient) {
     if (empty($transient->checked)) {
         return $transient;
     }
 
     $remote_version = kesher_get_remote_version();
-    $local_version = kesher_get_local_version();
+    $local_version  = kesher_get_local_version();
 
     if ($remote_version && version_compare($local_version, $remote_version, '<')) {
+
         $plugin_data = (object) [
             'slug'        => dirname(KESHER_PLUGIN_SLUG),
             'plugin'      => KESHER_PLUGIN_SLUG,
             'new_version' => $remote_version,
-            'package'     => kesher_get_download_url(),
+            'package'     => kesher_get_download_url(), // הורדה מה-main תמיד
             'url'         => "https://github.com/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME,
         ];
 
@@ -70,6 +68,7 @@ function kesher_check_for_wp_update($transient) {
 
     return $transient;
 }
+
 
 /**
  * הצגת פרטי העדכון בעמוד Plugins
@@ -111,33 +110,25 @@ function kesher_get_local_version(): string {
 /**
  * קבלת גרסה מרוחקת
  */
+/**
+ * קבלת גרסה מרוחקת מה-Main
+ */
 function kesher_get_remote_version(): string|false {
-    $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
+    $url = "https://raw.githubusercontent.com/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/main/wc-kesher-gateway.php";
 
-    $args = [
-        'headers' => [
-            'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
-        ]
-    ];
-
-    if (KESHER_GITHUB_TOKEN) {
-        $args['headers']['Authorization'] = 'Bearer ' . KESHER_GITHUB_TOKEN;
-    }
-
-    $response = wp_remote_get($url, $args);
+    $response = wp_remote_get($url);
 
     if (is_wp_error($response)) {
         return false;
     }
 
     $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
 
-    if (!isset($data['tag_name'])) {
-        return false;
+    if (preg_match('/Version:\s*(.+)/', $body, $matches)) {
+        return trim($matches[1]);
     }
 
-    return str_replace('v', '', $data['tag_name']);
+    return false;
 }
 
 /**
