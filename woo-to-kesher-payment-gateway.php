@@ -40,44 +40,70 @@ if (!defined('KESHER_PAYMENT_URL')) {
 define('KESHER_GITHUB_TOKEN', defined('ATTENTION_GITHUB_TOKEN') ? ATTENTION_GITHUB_TOKEN : '');
 
 /**
- * בדיקה יזומה של עדכון דרך URL
+ * שילוב מערכת העדכונים של וורדפרס
  */
-add_action('admin_init', function () {
-    if (isset($_GET['check_update_kesher'])) {
-        kesher_check_for_update();
-        exit;
-    }
-});
+add_filter('pre_set_site_transient_update_plugins', 'kesher_check_for_wp_update');
+add_filter('plugins_api', 'kesher_plugin_info', 10, 3);
 
 /**
- * בדיקת עדכון
+ * בדיקת עדכון דרך מערכת העדכונים
  */
-function kesher_check_for_update()
-{
+function kesher_check_for_wp_update($transient) {
+    if (empty($transient->checked)) {
+        return $transient;
+    }
+
+    $remote_version = kesher_get_remote_version();
     $local_version = kesher_get_local_version();
+
+    if ($remote_version && version_compare($local_version, $remote_version, '<')) {
+        $plugin_data = (object) [
+            'slug'        => dirname(KESHER_PLUGIN_SLUG),
+            'plugin'      => KESHER_PLUGIN_SLUG,
+            'new_version' => $remote_version,
+            'package'     => kesher_get_download_url(),
+            'url'         => "https://github.com/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME,
+        ];
+
+        $transient->response[KESHER_PLUGIN_SLUG] = $plugin_data;
+    }
+
+    return $transient;
+}
+
+/**
+ * הצגת פרטי העדכון בעמוד Plugins
+ */
+function kesher_plugin_info($res, $action, $args) {
+    if ($action !== 'plugin_information' || $args->slug !== dirname(KESHER_PLUGIN_SLUG)) {
+        return $res;
+    }
+
     $remote_version = kesher_get_remote_version();
 
-    echo "<h2>Current Version: " . $local_version . "</h2>";
-    echo "<h2>Remote Version: " . $remote_version . "</h2>";
-
     if (!$remote_version) {
-        echo "<h2>No remote version found.</h2>";
-        return;
+        return $res;
     }
 
-    if (version_compare($local_version, $remote_version, '<')) {
-        echo "<h2>Update Available. Updating...</h2>";
-        kesher_update_plugin();
-    } else {
-        echo "<h2>No update available.</h2>";
-    }
+    $res = (object) [
+        'name'          => 'WooCommerce Kesher Gateway',
+        'slug'          => dirname(KESHER_PLUGIN_SLUG),
+        'version'       => $remote_version,
+        'author'        => 'Attention Creative',
+        'homepage'      => "https://github.com/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME,
+        'download_link' => kesher_get_download_url(),
+        'tested'        => '6.3',
+        'requires'      => '5.2',
+        'requires_php'  => '7.2',
+    ];
+
+    return $res;
 }
 
 /**
  * קבלת גרסה מקומית
  */
-function kesher_get_local_version(): string
-{
+function kesher_get_local_version(): string {
     $plugin_data = get_file_data(KESHER_PLUGIN_FILE, ['Version' => 'Version']);
     return $plugin_data['Version'];
 }
@@ -85,10 +111,9 @@ function kesher_get_local_version(): string
 /**
  * קבלת גרסה מרוחקת
  */
-function kesher_get_remote_version(): string|false
-{
+function kesher_get_remote_version(): string|false {
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
-    
+
     $args = [
         'headers' => [
             'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
@@ -102,7 +127,6 @@ function kesher_get_remote_version(): string|false
     $response = wp_remote_get($url, $args);
 
     if (is_wp_error($response)) {
-        error_log('Error fetching remote version: ' . $response->get_error_message());
         return false;
     }
 
@@ -119,10 +143,9 @@ function kesher_get_remote_version(): string|false
 /**
  * קבלת URL להורדה
  */
-function kesher_get_download_url(): string|false
-{
+function kesher_get_download_url(): string|false {
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
-    
+
     $args = [
         'headers' => [
             'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
@@ -147,93 +170,6 @@ function kesher_get_download_url(): string|false
 
     return $data['assets'][0]['browser_download_url'];
 }
-
-/**
- * עדכון התוסף
- */
-function kesher_update_plugin()
-{
-    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/misc.php';
-
-    $download_url = kesher_get_download_url();
-    if (!$download_url) {
-        error_log('Download URL not found.');
-        return;
-    }
-
-    $tmp_file = get_temp_dir() . 'wc-kesher-gateway.zip';
-    $plugin_dir = WP_PLUGIN_DIR . '/wc-kesher-gateway';
-
-    $args = [
-        'headers' => [
-            'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
-        ]
-    ];
-
-    if (KESHER_GITHUB_TOKEN) {
-        $args['headers']['Authorization'] = 'Bearer ' . KESHER_GITHUB_TOKEN;
-    }
-
-    $response = wp_remote_get($download_url, $args);
-
-    if (is_wp_error($response)) {
-        error_log('Error downloading update: ' . $response->get_error_message());
-        return;
-    }
-
-    file_put_contents($tmp_file, wp_remote_retrieve_body($response));
-
-    // מחיקת התיקייה הקיימת
-    if (is_dir($plugin_dir)) {
-        kesher_recursive_delete($plugin_dir);
-    }
-
-    // חילוץ הקובץ
-    $unzip_result = unzip_file($tmp_file, WP_PLUGIN_DIR);
-    if (is_wp_error($unzip_result)) {
-        error_log('Error extracting ZIP: ' . $unzip_result->get_error_message());
-        unlink($tmp_file);
-        return;
-    }
-
-    // שינוי שם התיקייה
-    $unzipped_dirs = glob(WP_PLUGIN_DIR . '/AttentionCreative-*', GLOB_ONLYDIR);
-    if (!empty($unzipped_dirs)) {
-        rename($unzipped_dirs[0], $plugin_dir);
-    }
-
-    // ניקוי קובץ ה-ZIP
-    unlink($tmp_file);
-}
-
-/**
- * פונקציה למחיקת תיקייה
- */
-function kesher_recursive_delete($dir)
-{
-    if (!is_dir($dir)) {
-        return;
-    }
-
-    $files = scandir($dir);
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') {
-            continue;
-        }
-
-        $path = $dir . '/' . $file;
-        if (is_dir($path)) {
-            kesher_recursive_delete($path);
-        } else {
-            unlink($path);
-        }
-    }
-
-    rmdir($dir);
-}
-
 add_action('plugins_loaded', 'init_custom_payment_gateways');
 function init_custom_payment_gateways()
 {
