@@ -110,25 +110,33 @@ function kesher_get_local_version(): string {
 /**
  * קבלת גרסה מרוחקת
  */
-/**
- * קבלת גרסה מרוחקת מה-Main
- */
 function kesher_get_remote_version(): string|false {
-    $url = "https://raw.githubusercontent.com/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/main/wc-kesher-gateway.php";
+    $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
 
-    $response = wp_remote_get($url);
+    $args = [
+        'headers' => [
+            'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
+        ]
+    ];
+
+    if (KESHER_GITHUB_TOKEN) {
+        $args['headers']['Authorization'] = 'Bearer ' . KESHER_GITHUB_TOKEN;
+    }
+
+    $response = wp_remote_get($url, $args);
 
     if (is_wp_error($response)) {
         return false;
     }
 
     $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
 
-    if (preg_match('/Version:\s*(.+)/', $body, $matches)) {
-        return trim($matches[1]);
+    if (!isset($data['tag_name'])) {
+        return false;
     }
 
-    return false;
+    return str_replace('v', '', $data['tag_name']);
 }
 
 /**
