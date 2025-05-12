@@ -138,13 +138,12 @@ function kesher_get_remote_version(): string|false {
 
     return str_replace('v', '', $data['tag_name']);
 }
-
 /**
  * קבלת URL להורדה
  */
 function kesher_get_download_url(): string|false {
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
-
+error_log($url);
     $args = [
         'headers' => [
             'User-Agent' => 'WooCommerce-Kesher-Gateway-Updater',
@@ -158,17 +157,54 @@ function kesher_get_download_url(): string|false {
     $response = wp_remote_get($url, $args);
 
     if (is_wp_error($response)) {
+        error_log('Error fetching download URL: ' . $response->get_error_message());
         return false;
     }
 
-    $data = json_decode(wp_remote_retrieve_body($response), true);
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    error_log('Download URL Response: ' . print_r($data, true));
 
     if (!isset($data['assets'][0]['browser_download_url'])) {
+        error_log('No download URL found in response.');
         return false;
     }
 
-    return $data['assets'][0]['browser_download_url'];
+    $download_url = $data['assets'][0]['browser_download_url'];
+
+    // וידוא שהקובץ הוא בשם הנכון
+    if (!str_contains($download_url, 'wc-kesher-gateway.zip')) {
+        error_log('Download URL does not match expected filename.');
+        return false;
+    }
+
+    return $download_url;
 }
+
+
+
+add_action('admin_init', function () {
+    if (isset($_GET['check_kesher_update'])) {
+        $local_version  = kesher_get_local_version();
+        $remote_version = kesher_get_remote_version();
+        $download_url   = kesher_get_download_url();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'local_version' => $local_version,
+            'remote_version' => $remote_version,
+            'download_url' => $download_url,
+        ]);
+
+        exit;
+    }
+});
+
+
+
+
+
 add_action('plugins_loaded', 'init_custom_payment_gateways');
 function init_custom_payment_gateways()
 {
