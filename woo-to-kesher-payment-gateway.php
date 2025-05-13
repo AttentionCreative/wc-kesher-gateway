@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/AttentionCreative/wc-kesher-gateway
  * Update URI: https://github.com/AttentionCreative/wc-kesher-gateway
  * Description: תוסף זה נועד לשלב תשלום קשר ב-WooCommerce.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 5.2
  * Requires PHP: 7.2
  * Author: Attention Creative
@@ -107,10 +107,11 @@ function kesher_get_local_version(): string {
     return $plugin_data['Version'];
 }
 
+
 /**
- * קבלת גרסה מרוחקת
+ * @return string|false
  */
-function kesher_get_remote_version(): string|false {
+function kesher_get_remote_version(){
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
 
     $args = [
