@@ -140,9 +140,9 @@ function kesher_get_remote_version(){
     return str_replace('v', '', $data['tag_name']);
 }
 /**
- * קבלת URL להורדה
+ * @return string|false
  */
-function kesher_get_download_url(): string|false {
+function kesher_get_download_url()
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
     $args = [
         'headers' => [
@@ -174,8 +174,8 @@ function kesher_get_download_url(): string|false {
     $download_url = $data['assets'][0]['browser_download_url'];
 
     // וידוא שהקובץ הוא בשם הנכון
-    if (!str_contains($download_url, 'wc-kesher-gateway.zip')) {
-        error_log('Download URL does not match expected filename.');
+    if (strpos($download_url, 'wc-kesher-gateway.zip') === false)
+    error_log('Download URL does not match expected filename.');
         return false;
     }
 
