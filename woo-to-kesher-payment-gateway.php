@@ -142,7 +142,7 @@ function kesher_get_remote_version(){
 /**
  * @return string|false
  */
-function kesher_get_download_url()
+function kesher_get_download_url() {
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
     $args = [
         'headers' => [
