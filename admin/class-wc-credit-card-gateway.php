@@ -329,7 +329,7 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
                                 ' . $installments . '
                     "ProjectNumber": "' . $this->settings['projectnumber'] . '",
                     "Mail": "' . $billing_email . '"
-                    "Id": "' . $kesher_govt_id . '"
+                    "Id": "' . $kesher_govt_id . '",
                                         "Products": ' . $products_json . '
                 }
             },
