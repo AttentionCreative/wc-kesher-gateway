@@ -274,7 +274,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
 
         $currency_code = get_woocommerce_currency();
         $custom_currency_numeric_value = $currency_values[$currency_code];
-
+        $expiry_parts = explode('/', $expiry_date);
+        $month = $expiry_parts[0];
+        $year = substr($expiry_parts[1], -2);
+        $expiry_date = $year . $month;
         $installments = '';
         $credit_type = 1;
         $total_in_agorot = round($order_total * 100);
