@@ -1,10 +1,11 @@
 <?php
+
 /**
  * Plugin Name: WooCommerce Kesher Gateway
  * Plugin URI: https://github.com/AttentionCreative/wc-kesher-gateway
  * Update URI: https://github.com/AttentionCreative/wc-kesher-gateway
  * Description: תוסף זה נועד לשלב תשלום קשר ב-WooCommerce.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Requires at least: 5.2
  * Requires PHP: 7.2
  * Author: Attention Creative
@@ -45,7 +46,8 @@ define('KESHER_GITHUB_TOKEN', defined('ATTENTION_GITHUB_TOKEN') ? ATTENTION_GITH
 add_filter('pre_set_site_transient_update_plugins', 'kesher_check_for_wp_update');
 add_filter('plugins_api', 'kesher_plugin_info', 10, 3);
 
-function kesher_check_for_wp_update($transient) {
+function kesher_check_for_wp_update($transient)
+{
     if (empty($transient->checked)) {
         return $transient;
     }
@@ -73,7 +75,8 @@ function kesher_check_for_wp_update($transient) {
 /**
  * הצגת פרטי העדכון בעמוד Plugins
  */
-function kesher_plugin_info($res, $action, $args) {
+function kesher_plugin_info($res, $action, $args)
+{
     if ($action !== 'plugin_information' || $args->slug !== dirname(KESHER_PLUGIN_SLUG)) {
         return $res;
     }
@@ -102,7 +105,8 @@ function kesher_plugin_info($res, $action, $args) {
 /**
  * קבלת גרסה מקומית
  */
-function kesher_get_local_version(): string {
+function kesher_get_local_version(): string
+{
     $plugin_data = get_file_data(KESHER_PLUGIN_FILE, ['Version' => 'Version']);
     return $plugin_data['Version'];
 }
@@ -111,7 +115,8 @@ function kesher_get_local_version(): string {
 /**
  * @return string|false
  */
-function kesher_get_remote_version(){
+function kesher_get_remote_version()
+{
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
 
     $args = [
@@ -142,7 +147,8 @@ function kesher_get_remote_version(){
 /**
  * @return string|false
  */
-function kesher_get_download_url() {
+function kesher_get_download_url()
+{
     $url = "https://api.github.com/repos/" . KESHER_REPO_OWNER . "/" . KESHER_REPO_NAME . "/releases/latest";
     $args = [
         'headers' => [
@@ -174,8 +180,8 @@ function kesher_get_download_url() {
     $download_url = $data['assets'][0]['browser_download_url'];
 
     // וידוא שהקובץ הוא בשם הנכון
-    if (strpos($download_url, 'wc-kesher-gateway.zip') === false)
-    error_log('Download URL does not match expected filename.');
+    if (strpos($download_url, 'wc-kesher-gateway.zip') === false) {
+        error_log('Download URL does not match expected filename.');
         return false;
     }
 
