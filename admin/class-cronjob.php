@@ -24,28 +24,40 @@ class KesherHK_Cronjob
             $check_count = get_post_meta($order_id, '_kesher_check_count', true) ?: 0;
 
             if (!empty($transaction_id)) {
-                if ($payment_gateway == "kesher_credit_card") {
+                if ($payment_gateway === "kesher_credit_card") {
                     $obj = new WC_Credit_Card_Gateway();
-                } elseif ($payment_gateway == "kesher_bit_transaction") {
+                } elseif ($payment_gateway === "kesher_bit_transaction") {
                     $obj = new WC_Bit_Gateway();
-                } elseif ($payment_gateway == "kesher_cash_transaction") {
+                } elseif ($payment_gateway === "kesher_cash_transaction") {
                     $obj = new WC_Click_Transfer_Gateway();
+                } else {
+                    keser_plugin_log("⚠️ הזמנה $order_id - שער תשלום לא מוכר: $payment_gateway");
+                    continue;
                 }
 
-                $result = $obj->get_tran_data($order_id, $transaction_id);
+                $response = $obj->get_tran_data($order_id, $transaction_id);
 
-                if ($result === true) {
-                    $order->add_order_note('התשלום אושר בהצלחה, סטטוס ההזמנה הועבר אוטמטית למצב בטיפול');
+                // תנאי לזיהוי עסקה מאושרת לפי תגובת קשר
+                $is_approved = is_array($response)
+                    && isset($response['Status'], $response['TransactionType'], $response['CreditStatus'], $response['NumTransaction'])
+                    && $response['Status'] === 'עבר בהצלחה'
+                    && $response['TransactionType'] === 'עסקת חובה'
+                    && (int)$response['CreditStatus'] === 0
+                    && !empty($response['NumTransaction']);
+
+                if ($is_approved) {
+                    $order->add_order_note('התשלום אושר בהצלחה, סטטוס ההזמנה עודכן אוטומטית למצב בטיפול');
+                    $order->payment_complete($response['NumTransaction']);
                     $order->update_status('processing');
                     keser_plugin_log("✅ הזמנה $order_id עודכנה לבטיפול");
                 } else {
                     $check_count++;
                     update_post_meta($order_id, '_kesher_check_count', $check_count);
-                    keser_plugin_log("❌ הזמנה $order_id - עדין לא הושלמה (ניסיון $check_count מתוך 6)");
+                    keser_plugin_log("❌ הזמנה $order_id - התשלום עדיין לא הושלם (ניסיון $check_count מתוך 6)");
 
                     if ($check_count >= 6) {
                         $order->update_status('failed', 'ההזמנה סומנה ככושלת לאחר 6 ניסיונות בדיקה, הלקוח לא ביצע את התשלום');
-                        $order->add_order_note('ההזמנה סומנה ככושלת לאחר 6 ניסיונות בדיקה עם קשר, הלקוח לא ביצע את התשלום');
+                        $order->add_order_note('ההזמנה סומנה ככושלת לאחר 6 ניסיונות בדיקה מול קשר – התשלום לא אושר');
                         keser_plugin_log("⚠️ הזמנה $order_id סומנה ככושלת לאחר 6 בדיקות");
                     }
                 }
