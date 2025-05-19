@@ -302,8 +302,35 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         }
         $products_json = json_encode($products);
 
-        $request_body = '{"Json":{"userName":"' . $this->settings['username'] . '","password":"' . $this->settings['password'] . '","func":"SendTransaction","format":"json","tran":{"Address":"' . $billing_address_1 . '","City":"' . $billing_city . '","CreditNum":"' . $credit_card_number . '","Expiry":"' . $expiry_date . '","Cvv2":"' . $cvv . '","Total":"' . $total . '","Currency":"' . $custom_currency_numeric_value . '","CreditType":' . $credit_type . ',"Phone":"' . $billing_phone . '","ParamJ":"J4","TransactionType":"debit","FirstName":"' . $billing_first_name . '","LastName":"' . $billing_last_name . '",' . $installments . '"ProjectNumber":"' . $this->settings['projectnumber'] . '","Mail":"' . $billing_email . '","Id":"' . $kesher_govt_id . '","Products":' . $products_json . '}},"format":"json"}';
-
+        $request_body = '{
+            "Json": {
+               "userName": "' . $this->settings['username'] . '",
+                "password": "' . $this->settings['password'] . '",
+                "func": "SendTransaction",
+                "format": "json",
+                "tran": {
+                    "Address": "' . $billing_address_1 . '", 
+                    "City": "' . $billing_city . '",
+                    "CreditNum": "' . $credit_card_number . '",
+                    "Expiry": "' . $expiry_date . '",
+                    "Cvv2" : "' . $cvv . '",
+                    "Total": "' . $total . '",
+                    "Currency": "' . $custom_currency_numeric_value . '",
+                    "CreditType": 1,
+                    "Phone": "' . $billing_phone . '",
+                    "ParamJ": "J4",
+                    "TransactionType": "debit",
+                    "FirstName": "' . $billing_first_name . '",
+                    "LastName": "' . $billing_last_name . '",
+                                ' . $installments . '
+                    "ProjectNumber": "' . $this->settings['projectnumber'] . '",
+                    "Mail": "' . $billing_email . '",
+                    "Id": "' . $kesher_govt_id . '",
+                                        "Products": ' . $products_json . '
+                }
+            },
+            "format": "json"
+        }';
         keser_plugin_log('Credit Card Request Body: ' . $request_body);
 
         $response = wp_remote_post(KESHER_PAYMENT_URL, array(
