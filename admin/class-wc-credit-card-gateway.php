@@ -131,10 +131,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
 
             <!-- תעודת זהות -->
             <div class="form-row" style="flex: 0 0 45%; display: flex; flex-direction: column;">
-                <label for="kesher_govt_id">
+                <label for="kesher_govt_id_credit">
                     <?php echo esc_html__('תעודת זהות', 'kp-kesher-gateway'); ?> <span class="required">*</span>
                 </label>
-                <input type="text" class="input-text" name="kesher_govt_id" id="kesher_govt_id" style="width: 100%;"
+                <input type="text" class="input-text" name="kesher_govt_id_credit" id="kesher_govt_id_credit" style="width: 100%;"
                     placeholder="000000000" required />
             </div>
             <?php
@@ -264,7 +264,9 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         $credit_card_number = isset($_POST['kesher_credit_card_number']) ? wc_clean($_POST['kesher_credit_card_number']) : '';
         $expiry_date = isset($_POST['kesher_expiry_date']) ? wc_clean($_POST['kesher_expiry_date']) : '';
         $cvv = isset($_POST['kesher_cvv']) ? wc_clean($_POST['kesher_cvv']) : '';
-        $kesher_govt_id = isset($_POST['kesher_govt_id']) ? wc_clean($_POST['kesher_govt_id']) : '';
+        $kesher_govt_id_credit = isset($_POST['kesher_govt_id_credit'])
+            ? preg_replace('/\D/', '', trim($_POST['kesher_govt_id_credit']))
+            : '';
         $selected_installments = isset($_POST['kesher_installments']) ? intval($_POST['kesher_installments']) : 1;
 
         if (empty($credit_card_number) || empty($expiry_date) || empty($cvv)) {
@@ -325,7 +327,7 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
                                 ' . $installments . '
                     "ProjectNumber": "' . $this->settings['projectnumber'] . '",
                     "Mail": "' . $billing_email . '",
-                    "Id": "' . $kesher_govt_id . '",
+"Id": "' . $kesher_govt_id_credit . '",
                                         "Products": ' . $products_json . '
                 }
             },
@@ -366,10 +368,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         keser_plugin_log("Transaction Validation: Code $code | Status: " . var_export($status, true));
 
         if ($code === 0 && $status === true) {
-            if ($check_cvv === 'NotInserted' || $check_id === 'NotInserted') {
+            /* if ($check_cvv === 'NotInserted' || $check_id === 'NotInserted') {
                 wc_add_notice(__('CVV או תעודת זהות לא הוזנו כראוי. ודא שכל הפרטים מולאו בצורה תקינה.', 'kp-kesher-gateway'), 'error');
                 return;
-            }
+            }*/
 
             if ($tran_type === 'BlockedCard') {
                 wc_add_notice(__('העסקה נדחתה - כרטיס חסום. יש לנסות כרטיס אחר.', 'kp-kesher-gateway'), 'error');
