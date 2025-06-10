@@ -261,7 +261,9 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         $billing_address_1 = $order->get_billing_address_1();
         $billing_city = $order->get_billing_city();
 
-        $credit_card_number = isset($_POST['kesher_credit_card_number']) ? wc_clean($_POST['kesher_credit_card_number']) : '';
+        $credit_card_number = isset($_POST['kesher_credit_card_number'])
+            ? preg_replace('/\D/', '', wc_clean($_POST['kesher_credit_card_number']))
+            : '';
         $expiry_date = isset($_POST['kesher_expiry_date']) ? wc_clean($_POST['kesher_expiry_date']) : '';
         $cvv = isset($_POST['kesher_cvv']) ? wc_clean($_POST['kesher_cvv']) : '';
         $kesher_govt_id_credit = isset($_POST['kesher_govt_id_credit'])
