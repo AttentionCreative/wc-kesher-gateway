@@ -131,10 +131,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
 
             <!-- תעודת זהות -->
             <div class="form-row" style="flex: 0 0 45%; display: flex; flex-direction: column;">
-                <label for="kesher_govt_id_credit">
+                <label for="kesher_govt_id">
                     <?php echo esc_html__('תעודת זהות', 'kp-kesher-gateway'); ?> <span class="required">*</span>
                 </label>
-                <input type="text" class="input-text" name="kesher_govt_id_credit" id="kesher_govt_id_credit" style="width: 100%;"
+                <input type="text" class="input-text" name="kesher_govt_id" id="kesher_govt_id" style="width: 100%;"
                     placeholder="000000000" required />
             </div>
             <?php
@@ -261,14 +261,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         $billing_address_1 = $order->get_billing_address_1();
         $billing_city = $order->get_billing_city();
 
-        $credit_card_number = isset($_POST['kesher_credit_card_number'])
-            ? preg_replace('/\D/', '', wc_clean($_POST['kesher_credit_card_number']))
-            : '';
+        $credit_card_number = isset($_POST['kesher_credit_card_number']) ? wc_clean($_POST['kesher_credit_card_number']) : '';
         $expiry_date = isset($_POST['kesher_expiry_date']) ? wc_clean($_POST['kesher_expiry_date']) : '';
         $cvv = isset($_POST['kesher_cvv']) ? wc_clean($_POST['kesher_cvv']) : '';
-        $kesher_govt_id_credit = isset($_POST['kesher_govt_id_credit'])
-            ? preg_replace('/\D/', '', trim($_POST['kesher_govt_id_credit']))
-            : '';
+        $kesher_govt_id = isset($_POST['kesher_govt_id']) ? wc_clean($_POST['kesher_govt_id']) : '';
         $selected_installments = isset($_POST['kesher_installments']) ? intval($_POST['kesher_installments']) : 1;
 
         if (empty($credit_card_number) || empty($expiry_date) || empty($cvv)) {
@@ -306,35 +302,8 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         }
         $products_json = json_encode($products);
 
-        $request_body = '{
-            "Json": {
-               "userName": "' . $this->settings['username'] . '",
-                "password": "' . $this->settings['password'] . '",
-                "func": "SendTransaction",
-                "format": "json",
-                "tran": {
-                    "Address": "' . $billing_address_1 . '", 
-                    "City": "' . $billing_city . '",
-                    "CreditNum": "' . $credit_card_number . '",
-                    "Expiry": "' . $expiry_date . '",
-                    "Cvv2" : "' . $cvv . '",
-                    "Total": "' . $total . '",
-                    "Currency": "' . $custom_currency_numeric_value . '",
-                    "CreditType": 1,
-                    "Phone": "' . $billing_phone . '",
-                    "ParamJ": "J4",
-                    "TransactionType": "debit",
-                    "FirstName": "' . $billing_first_name . '",
-                    "LastName": "' . $billing_last_name . '",
-                                ' . $installments . '
-                    "ProjectNumber": "' . $this->settings['projectnumber'] . '",
-                    "Mail": "' . $billing_email . '",
-"Id": "' . $kesher_govt_id_credit . '",
-                                        "Products": ' . $products_json . '
-                }
-            },
-            "format": "json"
-        }';
+        $request_body = '{"Json":{"userName":"' . $this->settings['username'] . '","password":"' . $this->settings['password'] . '","func":"SendTransaction","format":"json","tran":{"Address":"' . $billing_address_1 . '","City":"' . $billing_city . '","CreditNum":"' . $credit_card_number . '","Expiry":"' . $expiry_date . '","Cvv2":"' . $cvv . '","Total":"' . $total . '","Currency":"' . $custom_currency_numeric_value . '","CreditType":' . $credit_type . ',"Phone":"' . $billing_phone . '","ParamJ":"J4","TransactionType":"debit","FirstName":"' . $billing_first_name . '","LastName":"' . $billing_last_name . '",' . $installments . '"ProjectNumber":"' . $this->settings['projectnumber'] . '","Mail":"' . $billing_email . '","Id":"' . $kesher_govt_id . '","Products":' . $products_json . '}},"format":"json"}';
+
         keser_plugin_log('Credit Card Request Body: ' . $request_body);
 
         $response = wp_remote_post(KESHER_PAYMENT_URL, array(
@@ -370,10 +339,10 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
         keser_plugin_log("Transaction Validation: Code $code | Status: " . var_export($status, true));
 
         if ($code === 0 && $status === true) {
-            /* if ($check_cvv === 'NotInserted' || $check_id === 'NotInserted') {
+            /*   if ($check_cvv === 'NotInserted' || $check_id === 'NotInserted') {
                 wc_add_notice(__('CVV או תעודת זהות לא הוזנו כראוי. ודא שכל הפרטים מולאו בצורה תקינה.', 'kp-kesher-gateway'), 'error');
                 return;
-            }*/
+            }
 
             if ($tran_type === 'BlockedCard') {
                 wc_add_notice(__('העסקה נדחתה - כרטיס חסום. יש לנסות כרטיס אחר.', 'kp-kesher-gateway'), 'error');
@@ -383,7 +352,7 @@ class WC_Credit_Card_Gateway extends WC_Payment_Gateway
             if ($card_type === 'DelekCard') {
                 wc_add_notice(__('לא ניתן לשלם באמצעות כרטיס דלק.', 'kp-kesher-gateway'), 'error');
                 return;
-            }
+            }*/
 
             if ($confirm === 'NoConfirm') {
                 wc_add_notice(__('העסקה לא אושרה - אישור לא התקבל מהמערכת. אנא נסו שוב או צרו קשר עם התמיכה.', 'kp-kesher-gateway'), 'error');
